@@ -118,14 +118,17 @@ function iconLoad(iconNames, divRef, containerRef) {
 
 function shadowShift(n, idx, isDec) {
     const shadowRefs = document.getElementsByClassName('project-shadow');
-
-    // Shifts the shadow and stops under/over flow.
+    const rotationValue = n[idx];
+    
+    // Apply a subtle rotation effect when hovering
     if (isDec) {
-        if (n[idx] < 150) return;
-        shadowRefs[idx / 3].style.width = n[idx]-- + "px";
+        if (rotationValue < 0) return;
+        shadowRefs[idx / 3].style.transform = `rotateY(${rotationValue--}deg)`;
+        n[idx] = rotationValue;
     } else {
-        if (n[idx] > 250) return;
-        shadowRefs[idx / 3].style.width = n[idx]++ + "px";
+        if (rotationValue > 10) return;
+        shadowRefs[idx / 3].style.transform = `rotateY(${rotationValue++}deg)`;
+        n[idx] = rotationValue;
     }
 }
 
@@ -199,13 +202,21 @@ function menuShift(projects, projectNums) {
     const leftButtonRef = document.getElementById('left-button-border');
     const rightButtonRef = document.getElementById('right-button-border');
     const curtainsRef = document.getElementsByClassName('blank-curtain');
+    const shadowRefs = document.getElementsByClassName('project-shadow');
     const buttonSound = new Audio('./media/audios/menu-shift.mp3');
     buttonSound.volume = 0.3;
 
     // On left button press, shift projects to the left.
     leftButtonRef.addEventListener('click', function() {
         for (let i = 0; i < 3; i++) {
-            // Play a cloud animation and move project indices by -1.
+            // Play a 3D spinning animation when changing projects
+            shadowRefs[i].style.animation = "spin-y 0.8s";
+            shadowRefs[i].addEventListener('animationend', function animEndHandler() {
+                this.style.animation = "";
+                this.removeEventListener('animationend', animEndHandler);
+            });
+            
+            // Move project indices by -1.
             curtainsRef[i].animate([ {visibility: "visible"}, {backgroundColor: "rgb(200, 200, 200)", offset: 0} ], { duration: 1500, iterations: 1 });
             projectNums[i] = projectNums[i] - 1 != -1 ? projectNums[i] - 1 : projects.length - 1;
         }
@@ -219,7 +230,14 @@ function menuShift(projects, projectNums) {
     // On right button press, shift projects to the right.
     rightButtonRef.addEventListener('click', function() {
         for (let i = 0; i < 3; i++) {
-            // Play a cloud animation and move project indices by 1.
+            // Play a 3D spinning animation when changing projects
+            shadowRefs[i].style.animation = "spin-y 0.8s";
+            shadowRefs[i].addEventListener('animationend', function animEndHandler() {
+                this.style.animation = "";
+                this.removeEventListener('animationend', animEndHandler);
+            });
+            
+            // Move project indices by 1.
             curtainsRef[i].animate([ {visibility: "visible"}, {backgroundColor: "rgb(200, 200, 200)", offset: 0} ], { duration: 1500, iterations: 1 });
             projectNums[i] = projectNums[i] + 1 != projects.length ? projectNums[i] + 1 : 0;
         }
@@ -243,32 +261,33 @@ function projectSelect(projectNums) {
 
 function projectShadows() {
     /*
-     * leftProjectShift = n[0]; The size of the shadow from the left project.
-     * leftShadowInc = n[1]; The increase shadow object from the left project.
-     * leftShadowDec = n[2]; The decrease shadow object from the left project.
-     * middleProjectShift = n[3]; The size of the shadow from the middle project.
-     * middleShadowInc = n[4]; The increase shadow object from the middle project.
-     * middleShadowDec = n[5]; The decrease shadow object from the middle project.
-     * rightProjectShift = n[6]; The size of the shadow from the right project.
-     * rightShadowInc = n[7]; The increase shadow object from the right project.
-     * rightShadowDec = n[8]; The decrease shadow object from the right project.
+     * n[0], n[3], n[6]: Current rotation value for each card
+     * n[1], n[4], n[7]: Interval for increasing rotation (on mouseout)
+     * n[2], n[5], n[8]: Interval for decreasing rotation (on mouseover)
      */
-    let n = [250, null, null, 250, null, null, 250, null, null];
-    const projectRefs = document.getElementsByClassName('project-box')
+    let n = [0, null, null, 0, null, null, 0, null, null];
+    const projectRefs = document.getElementsByClassName('project-box');
     const boxRefs = [projectRefs[0], projectRefs[1], projectRefs[2]];
+    const shadowRefs = document.getElementsByClassName('project-shadow');
 
-    // Cast shadows on projects that are hovered.
+    // Apply initial 3D appearance
     for (let i = 0; i < 3; i++) {
+        shadowRefs[i].style.transform = 'rotateY(0deg)';
+    }
+
+    // Handle hover effects for all three cards
+    for (let i = 0; i < 3; i++) {
+        // Add subtle rotation on hover
         boxRefs[i].addEventListener('mouseover', function() {
-            // Stop increasing and begin to decrease.
+            // Stop increasing and begin to decrease
             clearInterval(n[3 * i + 1]);
-            n[3 * i + 2] = setInterval(shadowShift, 3, n, 3 * i, true);
+            n[3 * i + 2] = setInterval(shadowShift, 20, n, 3 * i, true);
         });
 
         boxRefs[i].addEventListener('mouseout', function() {
-            // Stop decreasing and begin to increase.
+            // Stop decreasing and begin to increase
             clearInterval(n[3 * i + 2]);
-            n[3 * i + 1] = setInterval(shadowShift, 15, n, 3 * i, false);
+            n[3 * i + 1] = setInterval(shadowShift, 20, n, 3 * i, false);
         });
     }
 }
